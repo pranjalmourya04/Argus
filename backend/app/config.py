@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 env_path = BASE_DIR / ".env"
 
@@ -12,5 +13,6 @@ class Settings:
     PRIVATE_KEY = os.getenv("PRIVATE_KEY")
     CONTRACT_ADDRESS = os.getenv("CONTRACT_ADDRESS")
     MONGO_URI = os.getenv("MONGO_URI")
+    ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY")
 
 settings = Settings()

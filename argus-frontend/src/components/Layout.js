@@ -76,6 +76,18 @@ export default function Layout({ children }) {
         }}
       >
         {children}
+        <Box
+  sx={{
+    mt: 6,
+    pt: 3,
+    borderTop: "1px solid rgba(255,255,255,0.05)",
+    textAlign: "center",
+    fontSize: 13,
+    opacity: 0.6
+  }}
+>
+          © 2026 Pranjal Mourya | ARGUS Blockchain Risk Intelligence Engine
+       </Box>
       </Box>
     </Box>
   );

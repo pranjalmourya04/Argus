@@ -6,7 +6,6 @@ import time
 from ..websocket_manager import manager
 import json
 
-
 from ..blockchain import contract, w3, account
 from ..database import wallet_collection
 from ..ai.scoring import generate_risk_score
@@ -23,7 +22,7 @@ class WalletRequest(BaseModel):
 
 
 # -------------------------------
-# Response Model (Strong Contract)
+# Response Model
 # -------------------------------
 class AnalyzeResponse(BaseModel):
     wallet: str
@@ -43,19 +42,20 @@ class AnalyzeResponse(BaseModel):
 @router.post("/analyze", response_model=AnalyzeResponse)
 async def analyze_wallet(request: WalletRequest):
 
-
     start_time = time.time()
 
-    # Convert to checksum
-    wallet = Web3.to_checksum_address(request.wallet)
+    # Separate ML + Blockchain representations
+    wallet_input = request.wallet
+    wallet_ml = wallet_input.lower()
+    wallet_checksum = Web3.to_checksum_address(wallet_input)
 
     # -------------------------------
-    # AI Inference
+    # AI Inference (lowercase)
     # -------------------------------
-    risk_score, risk_level, features, explanations, inference_time_ms = generate_risk_score(wallet)
+    risk_score, risk_level, features, explanations, inference_time_ms = generate_risk_score(wallet_ml)
 
     # -------------------------------
-    # Blockchain Interaction
+    # Blockchain Interaction (checksum)
     # -------------------------------
     tx_hash = None
     block_number = None
@@ -65,7 +65,7 @@ async def analyze_wallet(request: WalletRequest):
         nonce = w3.eth.get_transaction_count(account.address)
 
         tx = contract.functions.flagWallet(
-            wallet,
+            wallet_checksum,
             risk_score
         ).build_transaction({
             "from": account.address,
@@ -84,6 +84,7 @@ async def analyze_wallet(request: WalletRequest):
         confirmation_status = "SUCCESS" if receipt.status == 1 else "FAILED"
 
     except Exception as e:
+        print("BLOCKCHAIN ERROR:", str(e))
         confirmation_status = "BLOCKCHAIN_FAILED"
 
     # -------------------------------
@@ -92,10 +93,10 @@ async def analyze_wallet(request: WalletRequest):
     total_request_time_ms = (time.time() - start_time) * 1000
 
     # -------------------------------
-    # Store in MongoDB
+    # Store in MongoDB (lowercase)
     # -------------------------------
     wallet_collection.insert_one({
-        "wallet": wallet,
+        "wallet": wallet_ml,
         "risk_score": risk_score,
         "risk_level": risk_level,
         "features": features,
@@ -106,22 +107,27 @@ async def analyze_wallet(request: WalletRequest):
         "block_number": block_number,
         "confirmation_status": confirmation_status,
         "timestamp": datetime.utcnow(),
-        "model_version": "v3_iso_forest_scaled"
+        "model_version": "v4_real_onchain_iso_forest"
     })
+
+    # WebSocket alert
     alert_data = {
-    "wallet": wallet,
-    "risk_score": risk_score,
-    "risk_level": risk_level
-}
+        "wallet": wallet_ml,
+        "risk_score": risk_score,
+        "risk_level": risk_level
+    }
 
     await manager.broadcast(json.dumps(alert_data))
 
+    # Debug wallet balance
+    print("Backend wallet:", account.address)
+    print("Balance:", w3.from_wei(w3.eth.get_balance(account.address), "ether"))
 
     # -------------------------------
     # Response
     # -------------------------------
     return {
-        "wallet": wallet,
+        "wallet": wallet_ml,
         "risk_score": risk_score,
         "risk_level": risk_level,
         "explanations": explanations,
@@ -131,75 +137,3 @@ async def analyze_wallet(request: WalletRequest):
         "block_number": block_number,
         "confirmation_status": confirmation_status
     }
-
-
-# from fastapi import APIRouter, Body
-# from datetime import datetime
-# from web3 import Web3
-# from pydantic import BaseModel
-
-# from ..blockchain import contract, w3, account
-# from ..database import wallet_collection
-# from ..ai.scoring import generate_risk_score
-# from ..config import settings
-
-# router = APIRouter()
-
-# class WalletRequest(BaseModel):
-#     wallet: str
-# @router.post("/analyze")
-# def analyze_wallet(request: WalletRequest):
-#     wallet = Web3.to_checksum_address(request.wallet)
-
-#     risk_score, risk_level, features, explanations, inference_time_ms = generate_risk_score(wallet)
-
-#     nonce = w3.eth.get_transaction_count(account.address)
-
-#     tx = contract.functions.flagWallet(
-#         wallet,
-#         risk_score
-#     ).build_transaction({
-#         "from": account.address,
-#         "nonce": nonce,
-#         "gas": 200000,
-#         "gasPrice": w3.to_wei("10", "gwei"),
-#         "chainId": 11155111
-#     })
-
-#     signed_tx = w3.eth.account.sign_transaction(tx, settings.PRIVATE_KEY)
-#     tx_hash = w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-#     receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
-#     confirmation_status = "SUCCESS" if receipt.status == 1 else "FAILED"
-#     block_number = receipt.blockNumber
-#     gas_used = receipt.gasUsed
-
-
-
-#     wallet_collection.insert_one({
-#     "wallet": wallet,
-#     "risk_score": risk_score,
-#     "risk_level": risk_level,
-#     "features": features,
-#     "explanations": explanations,
-#     "inference_time_ms": inference_time_ms,
-#     "tx_hash": tx_hash.hex(),
-#     "timestamp": datetime.utcnow(),
-#     "block_number": block_number,
-#     "gas_used": gas_used,
-#     "confirmation_status": confirmation_status,
-#     "model_version": "v3_iso_forest_scaled"
-
-# })
-
-
-#     return {
-#     "wallet": wallet,
-#     "risk_score": risk_score,
-#     "risk_level": risk_level,
-#     "explanations": explanations,
-#     "inference_time_ms": inference_time_ms,
-#     "tx_hash": tx_hash.hex(),
-#     "block_number": block_number,
-#     "confirmation_status": confirmation_status,
-
-# }
