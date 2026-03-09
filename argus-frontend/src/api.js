@@ -1,7 +1,7 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE_URL = "https://argus-sd5p.onrender.com";
 
 export async function analyzeWallet(wallet) {
-  const response = await fetch(`${API_BASE}/analyze`, {
+  const response = await fetch(`${API_BASE_URL}/analyze`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

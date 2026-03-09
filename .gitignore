@@ -24,8 +24,7 @@ __pycache__/
 *.pyc
 .env
 
-# Model files
-*.pkl
+
 
 # VS Code
 .vscode/
