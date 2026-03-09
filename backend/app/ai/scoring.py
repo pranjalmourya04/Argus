@@ -13,7 +13,7 @@ from app.services.onchain_features import get_wallet_graph
 # -----------------------------
 # Load Model + Scaler Once
 # -----------------------------
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parents[2]
 
 MODEL_PATH = BASE_DIR / "isolation_forest_model.pkl"
 SCALER_PATH = BASE_DIR / "scaler.pkl"
