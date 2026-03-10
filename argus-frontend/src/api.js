@@ -1,7 +1,7 @@
-const API_BASE_URL = "https://argus-sd5p.onrender.com";
+import API_BASE from "./config";
 
 export async function analyzeWallet(wallet) {
-  const response = await fetch(`${API_BASE_URL}/analyze`, {
+  const response = await fetch(`${API_BASE}/analyze`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

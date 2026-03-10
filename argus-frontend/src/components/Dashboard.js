@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CountUp from "react-countup";
+import API_BASE from "../config";
 
 import axios from "axios";
 import {
@@ -60,8 +61,8 @@ export default function Dashboard() {
 
   const fetchSummary = async () => {
     try {
-      const sum = await axios.get("https://argus-sd5p.onrender.com/analytics/summary");
-      const trendData = await axios.get("https://argus-sd5p.onrender.com/analytics/risk-trend");
+      const sum = await axios.get(`${API_BASE}/analytics/summary`);
+      const trendData = await axios.get(`${API_BASE}/analytics/risk-trend`);
 
       setData(sum.data);
       setTrend(trendData.data);
