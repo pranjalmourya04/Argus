@@ -13,6 +13,11 @@ It detects anomalous transaction patterns, assigns a calibrated risk score (0–
 
 ---
 
+##Live Demo:
+Frontend: https://argus-ai-tau.vercel.app
+API: https://argus-sd5p.onrender.com/docs
+---
+
 ## Problem Statement
 
 Blockchain fraud detection requires identifying abnormal wallet behavior without reliable labeled data.
